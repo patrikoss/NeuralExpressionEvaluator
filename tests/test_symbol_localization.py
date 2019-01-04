@@ -11,5 +11,8 @@ class SymbolLocalizationTest(unittest.TestCase):
         ])
         candidate_rectangles = get_symbols_candidates_location(arr)
         self.assertEqual(len(candidate_rectangles), 2)
-        self.assertEqual(sorted(candidate_rectangles), [(0,0,1,2), (2,2,2,2)])
+        rec1, rec2 = candidate_rectangles[0], candidate_rectangles[1]
+        rec1_cords = (rec1.top, rec1.left, rec1.bottom, rec1.right)
+        rec2_cords = (rec2.top, rec2.left, rec2.bottom, rec2.right)
+        self.assertEqual(sorted([rec1_cords, rec2_cords]), [(0,0,1,2), (2,2,2,2)])
 
