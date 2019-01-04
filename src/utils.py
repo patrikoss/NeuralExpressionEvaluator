@@ -5,13 +5,13 @@ import numpy as np
 
 SYMBOLS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 SYMBOLS += ["=", "-", "+", "times"]
-SYMBOLS += ["noise"]
+#SYMBOLS += ["noise"]
 
 SEED = 1
 TRAIN = 0.8
 DEV = 0.1
 
-CATEGORIES = 15
+CATEGORIES = 14
 SYMBOL_INPUT_SHAPE = (45,45,1)
 
 def shuffle_dataset(X, y):

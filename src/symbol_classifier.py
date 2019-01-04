@@ -57,11 +57,28 @@ class SymbolClassifier1():
             pickle.dump(self, filemodel)
 
 
-    def predict(self, np_image):
-        assert len(np_image.shape) == 2
-        image = np_image.reshape(1, *SYMBOL_INPUT_SHAPE)
-        probabilities = self.model.predict(image)
+    def predict_probabilties(self, np_images):
+        #print(np_images.shape)
+        assert len(np_images.shape) in {2, 3}
+        if len(np_images.shape) == 2:
+            images = np_images.reshape(1, *np_images.shape, 1)
+        else:
+            images = np_images.reshape(*np_images.shape, 1)
+        probabilities = self.model.predict(images)
+        return probabilities
+
+    def predict(self, np_images):
+        probabilities = self.predict_probabilties(np_images)
         predictions = np.argmax(probabilities, axis=1)
+        return self.encoder.categories_[0][predictions]
+
+    def predict_with_threshold(self, np_images, confidence_threshold=0.3):
+        probabilities = self.predict_probabilties(np_images)
+        predictions = np.argmax(probabilities, axis=1)
+        noise = np.max(probabilities, axis=1) < confidence_threshold
+        # set prediction to noise if it doesnt meet threshold
+        predictions[noise] = int(np.where(self.encoder.categories_[0] == b'noise')[0])
+        # import ipdb; ipdb.set_trace()
         return self.encoder.categories_[0][predictions]
 
     @staticmethod
@@ -69,5 +86,7 @@ class SymbolClassifier1():
         with open(model_filepath, 'rb') as filemodel:
             symbol_classifier = pickle.load(filemodel)
         return symbol_classifier
+
+
 
 
