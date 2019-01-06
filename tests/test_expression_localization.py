@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-from src.expression_localization import get_expressions_boxes
-from src.symbol_localization import SymbolBox
+from src.expression import get_expressions_boxes
+from src.symbol import SymbolBox
 
 
 class ExpressionLocalizationTest(unittest.TestCase):

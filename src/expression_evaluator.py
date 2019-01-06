@@ -1,3 +1,11 @@
+class InvalidExpression:
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+
 def is_operand(symbol):
     return symbol.isdigit()
 
@@ -29,8 +37,7 @@ def infix_to_postfix(symbols):
             while len(stack) > 0 and stack[-1] != '(':
                 postfix.append(stack.pop())
             if len(stack) == 0:
-                msg = 'Invalid expression. Cannot convert to postfix.'
-                raise Exception(msg)
+                raise InvalidExpression('Invalid expression. Cannot convert to postfix.')
             # pops '(' character
             stack.pop()
         else:  # operator
@@ -57,8 +64,7 @@ def evaluate_single_expression(a, b, operation):
     elif operation == '^':
         return a ** b
 
-    msg = 'Invalid expression.'
-    raise Exception
+    raise InvalidExpression('Invalid expression.')
 
 
 def evaluate_postfix(postfix_exp):

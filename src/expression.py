@@ -1,4 +1,5 @@
-from src.symbol_localization import get_symbols_candidates_location, SymbolBox
+from src import expression_evaluator as evaluator
+
 
 class ExpressionBox:
     def __init__(self, image, max_row_dist=30, max_col_dist=100):
@@ -17,7 +18,7 @@ class ExpressionBox:
 
     def add_symbol(self, symbol):
         self.symbol_boxes.append(symbol)
-        self.top = min(self.top, symbol.top) # TODO check if not max. Same check below
+        self.top = min(self.top, symbol.top)
         self.left = min(self.left, symbol.left)
         self.right = max(self.right, symbol.right)
         self.bottom = max(self.bottom, symbol.bottom)

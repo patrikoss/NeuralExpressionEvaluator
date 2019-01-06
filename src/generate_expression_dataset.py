@@ -1,11 +1,9 @@
-from PIL import Image
-from .utils import SYMBOLS, SEED
+from src.utils import SEED
 from scipy.ndimage import zoom
 from os.path import join as pjoin
 import numpy as np
 import cv2
 import os
-from collections import defaultdict
 
 np.random.seed(SEED)
 

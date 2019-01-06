@@ -1,23 +1,23 @@
 import numpy as np
 import cv2
 
-from src.symbol_localization import get_symbols_candidates_location
-from src.expression_localization import get_expressions_boxes
+from src.symbol import get_symbols_candidates_location
+from src.expression import get_expressions_boxes
 from src.symbol_classifier import SymbolClassifier1
-from src.utils import show_image
+from src.utils import INPUT_WIDTH, INPUT_HEIGHT
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FPS, 1)
 sc1 = SymbolClassifier1.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/symbol_classifier1/sc4_enc_dec.obj")
-#sc1 = SymbolClassifier1.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/symbol_classifier1/sc1.obj")
+
 
 def show_decoded_frame(symbols, symbols_preds):
     decoded_frame = 255 * np.ones((480,640), dtype=np.uint8)
     m = len(symbols)
     for i in range(m):
         symbol = symbols[i]
-        if symbol.top < 480-45 and symbol.left < 640 - 45:
-            decoded_frame[symbol.top:symbol.top+45, symbol.left:symbol.left+45] = symbol.decode_box()
+        if symbol.top < 480-INPUT_HEIGHT and symbol.left < 640 - INPUT_WIDTH:
+            decoded_frame[symbol.top:symbol.top+INPUT_HEIGHT, symbol.left:symbol.left+INPUT_WIDTH] = symbol.decode_box()
         cv2.putText(decoded_frame, symbols_preds[i].decode(), org=(symbol.left, symbol.top), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=1, color=(0, 255, 0), thickness=2)
     cv2.imshow('decoded frame', decoded_frame)
@@ -46,15 +46,12 @@ while (True):
                                       cv2.THRESH_BINARY, 7, 2.5)
     localization_image = cv2.erode(classification_image, np.ones((2, 2), np.uint8), iterations=1)
 
-
     symbols = get_symbols_candidates_location(localization_image, classification_image)
-    symbols_raw_boxes = np.array([symbol.decode_box() for symbol in symbols]).reshape(-1,45,45)
+    symbols_raw_boxes = np.array([symbol.decode_box() for symbol in symbols]).reshape(-1,INPUT_HEIGHT,INPUT_WIDTH)
     symbols_preds = sc1.predict(symbols_raw_boxes)
-
 
     show_decoded_frame(symbols, symbols_preds)
     show_symbols_and_expression_location(frame,classification_image,symbols, symbols_preds)
-
 
     cv2.imshow("localization_image", localization_image)
     cv2.imshow("classification image", classification_image)

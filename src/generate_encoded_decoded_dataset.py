@@ -1,65 +1,68 @@
-import cv2
 import numpy as np
 import os
 from os.path import join as pjoin
 from .loader import save_dataset
-from . import symbol_localization as sl
-
-INTERPOLATION_ENCODE = cv2.INTER_LINEAR
-INTERPOLATION_DECODE = cv2.INTER_LINEAR
-
-
-def decode(raw_box, rescaled_height=45, rescaled_width=45):
-    _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
-    raw_box = cv2.resize(raw_box, (rescaled_width, rescaled_height), interpolation=cv2.INTER_LINEAR)
-    _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
-    raw_box = cv2.dilate(raw_box, kernel=np.ones((3,3), dtype=np.uint8), iterations=1)
-
-    return raw_box
+from . import symbol as sl
+from src.utils import SEED, INPUT_HEIGHT, INPUT_WIDTH
+from src.symbol import encode_symbol, decode_symbol
+import matplotlib.pyplot as plt
 
 
-def encode(raw_box, target_height, target_width):
-    _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
-    raw_box = cv2.erode(raw_box, kernel=np.ones((5, 5)), iterations=1)
-
-    raw_box = cv2.resize(raw_box, (target_width, target_height), interpolation=INTERPOLATION_ENCODE)
-    _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
-    return raw_box
+np.random.seed(SEED)
 
 
-def encode_decode(image, intermediate_height, intermediate_width):
-    encoded = encode(image, intermediate_height, intermediate_width)
-    decoded = decode(encoded)
-    # print("Base:", np.unique(image, return_counts=True))
-    # print("Encoded:", np.unique(encoded, return_counts=True))
-    # print("Decoded:", np.unique(decoded, return_counts=True))
-    return {
-        "raw_image": image,
-        "encoded_image": encoded,
-        "decoded_image": decoded,
-        "intermediate_height": intermediate_height,
-        "intermediate_width": intermediate_width
-    }
+def display_enc_dec_images(images, intermediate_height, intermediate_width):
+    columns, rows = 3, len(images)
+    fig = plt.figure()
 
-def generate_encoded_decoded_dataset(source_folder_path,target_folder_path,
+    # ax enables access to manipulate each of subplots
+    ax = []
+
+    for row in range(rows):
+        raw_img = images[row]
+
+        encoded = encode_symbol(raw_img, intermediate_height, intermediate_width)
+        decoded = decode_symbol(encoded, INPUT_HEIGHT, INPUT_WIDTH)
+
+        ax.append(fig.add_subplot(rows, columns, columns*row+1))
+        plt.imshow(raw_img, alpha=0.25, cmap='gray')
+
+        ax.append(fig.add_subplot(rows, columns, columns*row+2))
+        plt.imshow(encoded, alpha=0.25, cmap='gray')
+
+        ax.append(fig.add_subplot(rows, columns, columns*row+3))
+        plt.imshow(decoded, alpha=0.25, cmap='gray')
+
+    plt.colorbar()
+    plt.show()
+
+# Example usage:
+# dataset = np.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/0.npz")
+# X = dataset['X']
+# display_enc_dec_images( [X[0], X[1], X[2], X[3], X[4]], 20, 20 )
+
+def generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
                                      intermediate_shape):
 
     for filename in os.listdir(source_folder_path):
+
         symbol_name = filename[:-4]
+        print("Resizing symbol: {}".format(symbol_name))
+
         source_dataset = np.load(pjoin(source_folder_path, filename))
         X, y = source_dataset['X'], source_dataset['y']
-        print("Resizing symbol: {}".format(symbol_name))
-        count = 0
-        newX, newY = [], []
+        count, newX, newY = 0, [], []
+
         for example in range(X.shape[0]):
             symbol = X[example]
 
-            # append self
+            # append unmodified example
             newX.append(X[0]); newY.append(symbol_name)
 
+            # append differently transformed images
             for intermediate_height, intermediate_width in intermediate_shape:
                 encoded = sl.encode_symbol(symbol, intermediate_height, intermediate_width)
-                decoded = sl.decode_symbol(encoded, 45, 45)
+                decoded = sl.decode_symbol(encoded, INPUT_HEIGHT, INPUT_WIDTH)
                 newX.append(decoded); newY.append(symbol_name)
 
             count += 1
@@ -68,13 +71,11 @@ def generate_encoded_decoded_dataset(source_folder_path,target_folder_path,
 
         newX = np.array(newX)
         newY = np.array(newY, dtype='|S6')  # data type: string
-        print(newX.shape, newY.shape, pjoin(target_folder_path, filename))
         save_dataset(newX, newY, pjoin(target_folder_path, filename))
 
 
+# Example usage:
 # source_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/"
 # target_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/encoded_decoded_npz_symbols"
-# intermediate_height = 20
-# intermediate_width = 20
 # generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
 #                                  intermediate_shape=[(70,70), (20,20), (30,20), (40,20), (70,40)])

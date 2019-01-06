@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
-from src.symbol_localization import get_symbols_candidates_location
+from src.symbol import get_symbols_candidates_location
+
 
 class SymbolLocalizationTest(unittest.TestCase):
     def test_simple_location(self):
@@ -9,7 +10,7 @@ class SymbolLocalizationTest(unittest.TestCase):
             [0,   255, 255],
             [255, 255,   0]
         ])
-        candidate_rectangles = get_symbols_candidates_location(arr)
+        candidate_rectangles = get_symbols_candidates_location(arr, arr)
         self.assertEqual(len(candidate_rectangles), 2)
         rec1, rec2 = candidate_rectangles[0], candidate_rectangles[1]
         rec1_cords = (rec1.top, rec1.left, rec1.bottom, rec1.right)

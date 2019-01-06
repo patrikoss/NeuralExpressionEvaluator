@@ -1,15 +1,18 @@
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
 from keras.models import Sequential
-from keras.layers import Dense, Flatten, Input, Conv2D, MaxPooling2D, BatchNormalization
+from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, BatchNormalization
 from keras.optimizers import sgd
-from .utils import CATEGORIES, SYMBOL_INPUT_SHAPE, shuffle_dataset, load_symbols_dataset
+from .utils import CATEGORIES, load_symbols_dataset
+from .utils import INPUT_CHANNEL,INPUT_HEIGHT, INPUT_WIDTH
 import pickle
 
-class SymbolClassifier1():
+
+class SymbolClassifier1:
+
     def __init__(self):
         model = Sequential()
-        model.add(BatchNormalization(input_shape=SYMBOL_INPUT_SHAPE))
+        model.add(BatchNormalization(input_shape=(INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL)))
         model.add(Conv2D(filters=32, kernel_size=(3, 3), padding='same'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
         model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
@@ -23,20 +26,16 @@ class SymbolClassifier1():
         self.encoder = OneHotEncoder()
         self.model = model
 
-
     def train(self, symbols_train_npz_folder):
         train_dataset = load_symbols_dataset(symbols_train_npz_folder)
         trainX, trainY = train_dataset["X"], train_dataset["y"]
-        #categories = train_dataset["categories"]
 
         trainY = trainY.reshape(-1,1)
         trainX = trainX.reshape(*trainX.shape, -1)
 
-        #import ipdb; ipdb.set_trace()
-
         self.encoder.fit(trainY)
-        self.model.fit(trainX, self.encoder.transform(trainY), epochs=2, batch_size=128, validation_split=0.01)
-
+        self.model.fit(trainX, self.encoder.transform(trainY), epochs=2,
+                       batch_size=128,validation_split=0.01)
 
     def evaluate(self, symbols_dev_npz_folder):
         dev_dataset = load_symbols_dataset(symbols_dev_npz_folder)
@@ -51,11 +50,9 @@ class SymbolClassifier1():
             "accuracy": loss_and_metrics[1]
         }
 
-
     def save(self, model_filepath):
         with open(model_filepath, 'wb') as filemodel:
             pickle.dump(self, filemodel)
-
 
     def predict_probabilties(self, np_images):
         assert len(np_images.shape) in {2, 3}
@@ -72,7 +69,6 @@ class SymbolClassifier1():
             return np.empty(0, 'S6')
         predictions = np.argmax(probabilities, axis=1)
         return self.encoder.categories_[0][predictions]
-
 
     @staticmethod
     def load(model_filepath):
