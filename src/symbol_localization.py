@@ -3,6 +3,30 @@ import numpy as np
 import cv2
 
 
+def decode_symbol(encoded_symbol_box, rescaled_height=45, rescaled_width=45):
+    encoded_box = encoded_symbol_box
+    raw_height, raw_width = encoded_box.shape
+    difference = abs(raw_height - raw_width)
+    if raw_height < raw_width:
+        padding = (((difference + 1) // 2, difference // 2), (0, 0))
+    else:
+        padding = ((0, 0), ((difference + 1) // 2, difference // 2))
+
+    decoded_box = np.pad(encoded_box, padding, mode='constant', constant_values=255)
+    _, decoded_box = cv2.threshold(decoded_box, 127, 255, cv2.THRESH_BINARY)
+    decoded_box = cv2.resize(decoded_box, (rescaled_width, rescaled_height), interpolation=cv2.INTER_LINEAR)
+    _, decoded_box = cv2.threshold(decoded_box, 127, 255, cv2.THRESH_BINARY)
+    return decoded_box
+
+
+def encode_symbol(raw_symbol_box, encoded_height=None, encoded_width=None):
+    _, encoded_box = cv2.threshold(raw_symbol_box, 127, 255, cv2.THRESH_BINARY)
+    if encoded_height is not None and encoded_width is not None:
+        encoded_box = cv2.resize(encoded_box, (encoded_width, encoded_height), interpolation=cv2.INTER_LINEAR)
+        _, encoded_box = cv2.threshold(encoded_box, 127, 255, cv2.THRESH_BINARY)
+    return encoded_box
+
+
 class SymbolBox:
     def __init__(self, image, top, left, bottom, right):
         self.top, self.left, self.bottom, self.right = top, left, bottom, right
@@ -12,27 +36,82 @@ class SymbolBox:
     def get_raw_box(self):
         return self.image[self.top: self.bottom+1, self.left:self.right+1]
 
-    def get_rescaled_box(self, rescaled_height=45, rescaled_width=45):
-        raw_box = self.get_raw_box()
+
+    # def decode_box(self, rescaled_height=45, rescaled_width=45):
+    #     encoded_box = self.encode_box()
+    #     return decode_symbol(encoded_box, rescaled_height, rescaled_width)
+    #
+    #
+    # def encode_box(self, encoded_height=None, encoded_width=None):
+    #     raw_symbol_box = self.get_raw_box()
+    #     return encode_symbol(raw_symbol_box)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def decode_box(self, rescaled_height=45, rescaled_width=45):
+        raw_box = self.encode_box()
         raw_height, raw_width = raw_box.shape
         difference = abs(raw_height - raw_width)
         if raw_height < raw_width:
-            padding = (((difference+1)//2, difference//2), (0, 0))
+            padding = (((difference + 1) // 2, difference // 2), (0, 0))
         else:
             padding = ((0, 0), ((difference + 1) // 2, difference // 2))
-        box = np.pad(raw_box, padding, mode='constant', constant_values=255)
-        return cv2.resize(box, (rescaled_height, rescaled_width), interpolation=cv2.INTER_NEAREST)
+
+        raw_box = np.pad(raw_box, padding, mode='constant', constant_values=255)
+        _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+        raw_box = cv2.resize(raw_box, (rescaled_width, rescaled_height), interpolation=cv2.INTER_LINEAR)
+        _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+        return raw_box
+
+    def encode_box(self, encoded_height=None, encoded_width=None):
+        raw_box = self.get_raw_box()
+        _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+        if encoded_height != None and encoded_width != None:
+            raw_box = cv2.resize(raw_box, (encoded_width, encoded_height), interpolation=cv2.INTER_LINEAR)
+            _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+        return raw_box
 
 
-def get_symbols_candidates_location(image):
-    image = 255 - image
-    labeled_image, num_features = label(image, np.ones((3, 3), dtype=np.uint8))  # , np.ones((3, 3), dtype=np.uint8))
+    # def decode_box(self, rescaled_height=45, rescaled_width=45):
+    #     raw_box = self.encode_box()
+    #     _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+    #     # raw_box = cv2.erode(raw_box, kernel=np.ones((2, 2)), iterations=2)
+    #     raw_box = cv2.resize(raw_box, (rescaled_width, rescaled_height), interpolation=cv2.INTER_LINEAR)
+    #     _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+    #     raw_box = cv2.dilate(raw_box, kernel=np.ones((2, 2), dtype=np.uint8), iterations=3)
+    #
+    #     return raw_box
+    #
+    # def encode_box(self):
+    #     raw_box = self.get_raw_box()
+    #     _, raw_box = cv2.threshold(raw_box, 127, 255, cv2.THRESH_BINARY)
+    #     raw_box = cv2.erode(raw_box, kernel=np.ones((2, 2)), iterations=4)
+    #     return raw_box
+
+
+
+def get_symbols_candidates_location(localization_image, classification_image):
+    localization_image = 255 - localization_image
+    labeled_image, num_features = label(localization_image, np.ones((3, 3), dtype=np.uint8))  # , np.ones((3, 3), dtype=np.uint8))
     label_indexes, label_counts = np.unique(labeled_image, return_counts=True)
     # TODO if it works too slow filter out the noise at this point
     label_rectangles = np.array(find_objects(labeled_image))
 
     noise_threshold = 0.01
-    valid_blocks_mask = label_counts[1:] > noise_threshold ** 2 * image.shape[1] * image.shape[0]
-    valid_rects = [SymbolBox(image, slice_vert.start, slice_hor.start, slice_vert.stop - 1, slice_hor.stop - 1)
+    valid_blocks_mask = label_counts[1:] > 2* noise_threshold ** 2 * localization_image.shape[1] * localization_image.shape[0]
+    valid_rects = [SymbolBox(classification_image, slice_vert.start, slice_hor.start, slice_vert.stop - 1, slice_hor.stop - 1)
                    for slice_vert, slice_hor in label_rectangles[valid_blocks_mask]]
     return valid_rects
