@@ -1,10 +1,10 @@
 import numpy as np
 import os
 from os.path import join as pjoin
-from .loader import save_dataset
-from . import symbol as sl
-from src.utils import SEED, INPUT_HEIGHT, INPUT_WIDTH
-from src.symbol import encode_symbol, decode_symbol
+from src.utils.dataset import save_dataset
+from src.utils import symbol as sl
+from src.utils.others import SEED, INPUT_HEIGHT, INPUT_WIDTH
+from src.utils.symbol import encode_symbol, decode_symbol
 import matplotlib.pyplot as plt
 
 
@@ -74,8 +74,14 @@ def generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
         save_dataset(newX, newY, pjoin(target_folder_path, filename))
 
 
+def generate(source_folder_path, target_folder_path):
+    generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
+                                     intermediate_shape=[(40, 20), (30, 20), (20, 20),
+                                                         (70, 70), (70, 40), (70, 30), (70, 20)])
+
+
 # Example usage:
-# source_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/"
-# target_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/encoded_decoded_npz_symbols"
-# generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
-#                                  intermediate_shape=[(70,70), (20,20), (30,20), (40,20), (70,40)])
+#source_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/"
+#target_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/encoded_decoded_npz_symbols"
+#generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
+#                                 intermediate_shape=[(70,70), (20,20), (30,20), (40,20), (70,40)])

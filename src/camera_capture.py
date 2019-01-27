@@ -1,64 +1,37 @@
-import numpy as np
 import cv2
 
-from src.symbol import get_symbols_candidates_location
-from src.expression import get_expressions_boxes
-from src.symbol_classifier import SymbolClassifier1
-from src.utils import INPUT_WIDTH, INPUT_HEIGHT
+from src.utils.expression import get_expressions_boxes
+from src.opencv.symbol_classifier import SymbolClassifier
+from src.opencv.opencv_frame_handler import OpenCVFrameHandler
+from src.sliding_window.sliding_window_frame_handler import SlidingWindowFrameHandler
+from src.sliding_window.detector import SymbolDetector
 
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FPS, 1)
-sc1 = SymbolClassifier1.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/symbol_classifier1/sc4_enc_dec.obj")
 
 
-def show_decoded_frame(symbols, symbols_preds):
-    decoded_frame = 255 * np.ones((480,640), dtype=np.uint8)
-    m = len(symbols)
-    for i in range(m):
-        symbol = symbols[i]
-        if symbol.top < 480-INPUT_HEIGHT and symbol.left < 640 - INPUT_WIDTH:
-            decoded_frame[symbol.top:symbol.top+INPUT_HEIGHT, symbol.left:symbol.left+INPUT_WIDTH] = symbol.decode_box()
-        cv2.putText(decoded_frame, symbols_preds[i].decode(), org=(symbol.left, symbol.top), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1, color=(0, 255, 0), thickness=2)
-    cv2.imshow('decoded frame', decoded_frame)
+
+def capture():
+    sc1 = SymbolClassifier.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/symbol_classifier/s1.obj")
+    sw1 = SymbolDetector.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/sliding_window/sw1.obj")
+    fh = OpenCVFrameHandler(sc1)
+    sw = SlidingWindowFrameHandler(sw1)
+
+    while (True):
+        # Capture frame-by-frame
+
+        ret, frame = cap.read()
+        #symbol_boxes = fh.get_symbols(frame)
+        symbol_boxes = sw.get_symbols(frame)
+        expressions_boxes = get_expressions_boxes(symbol_boxes, frame)
+        sw.show_frames(frame, symbol_boxes, expressions_boxes)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
 
-def show_symbols_and_expression_location(image, classification_image, symbols, symbols_preds):
-    for i, symbol in enumerate(symbols):
-        cv2.rectangle(image, (symbol.left, symbol.top), (symbol.right, symbol.bottom), (0, 255, 0), 3)
-        cv2.putText(image, symbols_preds[i].decode(), org=(symbol.left, symbol.top), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                    fontScale=1, color=(0,255,0), thickness=2)
-    show_decoded_frame(symbols, symbols_preds)
-
-    expression_boxes = get_expressions_boxes(symbols, classification_image)
-    for exp_box in expression_boxes:
-        cv2.rectangle(image, (exp_box.left, exp_box.top), (exp_box.right, exp_box.bottom), (255, 0, 0), 1)
-
-    cv2.imshow("original image", image)
-
-
-while (True):
-    # Capture frame-by-frame
-    ret, frame = cap.read()
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    classification_image = cv2.adaptiveThreshold(gray_frame, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, \
-                                      cv2.THRESH_BINARY, 7, 2.5)
-    localization_image = cv2.erode(classification_image, np.ones((2, 2), np.uint8), iterations=1)
-
-    symbols = get_symbols_candidates_location(localization_image, classification_image)
-    symbols_raw_boxes = np.array([symbol.decode_box() for symbol in symbols]).reshape(-1,INPUT_HEIGHT,INPUT_WIDTH)
-    symbols_preds = sc1.predict(symbols_raw_boxes)
-
-    show_decoded_frame(symbols, symbols_preds)
-    show_symbols_and_expression_location(frame,classification_image,symbols, symbols_preds)
-
-    cv2.imshow("localization_image", localization_image)
-    cv2.imshow("classification image", classification_image)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
+capture()
 # When everything done, release the capture
+
 cap.release()
 cv2.destroyAllWindows()

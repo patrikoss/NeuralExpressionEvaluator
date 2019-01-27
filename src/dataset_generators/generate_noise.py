@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import INPUT_HEIGHT, INPUT_WIDTH
+from src.utils.others import INPUT_HEIGHT, INPUT_WIDTH
 from os.path import join as pjoin
 from scipy.misc import imsave
 

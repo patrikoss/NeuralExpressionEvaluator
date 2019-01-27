@@ -1,4 +1,4 @@
-from src.utils import SEED
+from src.utils.others import SEED, INPUT_HEIGHT, INPUT_WIDTH
 from scipy.ndimage import zoom
 from os.path import join as pjoin
 import numpy as np
@@ -6,10 +6,6 @@ import cv2
 import os
 
 np.random.seed(SEED)
-
-IMAGE_HEIGHT = 480
-IMAGE_WIDTH = 640
-
 
 class TransformedSymbolGenerator:
     def __init__(self, symbol_dataset_npz):

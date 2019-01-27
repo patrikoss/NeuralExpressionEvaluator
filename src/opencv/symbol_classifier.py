@@ -3,16 +3,16 @@ from sklearn.preprocessing import OneHotEncoder
 from keras.models import Sequential
 from keras.layers import Dense, Flatten, Conv2D, MaxPooling2D, BatchNormalization
 from keras.optimizers import sgd
-from .utils import CATEGORIES, load_symbols_dataset
-from .utils import INPUT_CHANNEL,INPUT_HEIGHT, INPUT_WIDTH
+from src.utils.dataset import load_dataset
+from src.utils.others import CATEGORIES,INPUT_HEIGHT, INPUT_WIDTH
 import pickle
 
 
-class SymbolClassifier1:
+class SymbolClassifier:
 
     def __init__(self):
         model = Sequential()
-        model.add(BatchNormalization(input_shape=(INPUT_HEIGHT, INPUT_WIDTH, INPUT_CHANNEL)))
+        model.add(BatchNormalization(input_shape=(INPUT_HEIGHT, INPUT_WIDTH, 1)))
         model.add(Conv2D(filters=32, kernel_size=(3, 3), padding='same'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
         model.add(Conv2D(filters=64, kernel_size=(3, 3), padding='same'))
@@ -27,7 +27,7 @@ class SymbolClassifier1:
         self.model = model
 
     def train(self, symbols_train_npz_folder):
-        train_dataset = load_symbols_dataset(symbols_train_npz_folder)
+        train_dataset = load_dataset(symbols_train_npz_folder)
         trainX, trainY = train_dataset["X"], train_dataset["y"]
 
         trainY = trainY.reshape(-1,1)
@@ -38,7 +38,7 @@ class SymbolClassifier1:
                        batch_size=128,validation_split=0.01)
 
     def evaluate(self, symbols_dev_npz_folder):
-        dev_dataset = load_symbols_dataset(symbols_dev_npz_folder)
+        dev_dataset = load_dataset(symbols_dev_npz_folder)
         devX, devY = dev_dataset["X"], dev_dataset["y"]
 
         devY = devY.reshape(-1,1)
@@ -64,11 +64,15 @@ class SymbolClassifier1:
         return probabilities
 
     def predict(self, np_images):
+        """
+        Returns pair of list of predictions:
+        labels, probabilitiess
+        """
         probabilities = self.predict_probabilties(np_images)
         if not len(probabilities):
             return np.empty(0, 'S6')
         predictions = np.argmax(probabilities, axis=1)
-        return self.encoder.categories_[0][predictions]
+        return self.encoder.categories_[0][predictions], probabilities.max(axis=1)
 
     @staticmethod
     def load(model_filepath):
@@ -79,3 +83,8 @@ class SymbolClassifier1:
 
 
 
+"""
+# How to train?
+sc = SymbolClassifier1("path/to/encoded_decoded_dataset")
+sc.save("...")
+"""

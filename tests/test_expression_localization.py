@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
-from src.expression import get_expressions_boxes
-from src.symbol import SymbolBox
+from src.utils.expression import get_expressions_boxes
+from src.utils.symbol import SymbolBox
 
 
 class ExpressionLocalizationTest(unittest.TestCase):
@@ -9,8 +9,8 @@ class ExpressionLocalizationTest(unittest.TestCase):
         image = 255 * np.ones((480,640), dtype=np.uint8)
         image[0,0] = 0
         image[479,639] = 0
-        sb1 = SymbolBox(image, 0,0,0,0)
-        sb2 = SymbolBox(image, 479,639,479,639)
+        sb1 = SymbolBox(image, 0,0,0,0,1, "bg")
+        sb2 = SymbolBox(image, 479,639,479,639, 1, "bg")
         expressions = get_expressions_boxes([sb1, sb2], image)
         self.assertEqual(len(expressions), 2)
 

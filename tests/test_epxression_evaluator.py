@@ -1,6 +1,5 @@
 import unittest
-import numpy as np
-from src.expression_evaluator import *
+from src.utils.expression_evaluator import *
 
 
 class SymbolLocalizationTest(unittest.TestCase):
