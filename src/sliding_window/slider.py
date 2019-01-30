@@ -2,6 +2,7 @@ import itertools
 import cv2
 import numpy as np
 from src.utils.symbol import SymbolBox
+from heapq import heapify, heappop, heappush
 
 class SlidingWindow:
     def __init__(self, image, h_starts, w_starts, h_rescale_factor, w_rescale_factor, max_rescales,
@@ -32,12 +33,32 @@ class SlidingWindow:
         """
         self.symbols = [symbol for symbol in self.symbols if symbol.prediction_confidence > threshold]
 
-    def suppress(self):
+    def suppress(self, iou_threshold=0.01):
         """
         :param boxes:
         :return:
         """
-        pass
+        def iou(symbol1, symbol2):
+            left = max(symbol1.left, symbol2.left)
+            right = min(symbol1.right, symbol2.right)
+            top = max(symbol1.top, symbol2.top)
+            bottom = min(symbol1.bottom, symbol2.bottom)
+            intersection = max(right - left, 0) * max(bottom - top, 0)
+            s1_area = (symbol1.right-symbol1.left)*(symbol1.bottom-symbol1.top)
+            s2_area = (symbol2.right-symbol2.left)*(symbol2.bottom-symbol2.top)
+            union = s1_area + s2_area - intersection
+            return intersection / union
+
+        candidates = sorted([(symbol.prediction_confidence, dummy_ind, symbol) for dummy_ind, symbol in enumerate(self.symbols)])
+        valid = []
+        for _, _, candidate in candidates:
+            for symbol in valid:
+                if iou(symbol, candidate) >= iou_threshold:
+                    break
+            else:
+                valid.append(candidate)
+        self.symbols = valid
+
 
     def find_symbol_boxes(self, rescale_h, rescale_w):
         """
@@ -57,14 +78,13 @@ class SlidingWindow:
         symbols = list()
 
         image = cv2.resize(self.image, (target_w, target_h), interpolation=cv2.INTER_LINEAR)
-        image = 1./255 * image
 
         for offset_h, offset_w in self.offsets:
             offset_img = image[offset_h:, offset_w:, :]
             offset_img = offset_img.reshape(1, *offset_img.shape)
 
             preds_labels, preds_conf = self.detector.predict(offset_img)
-            print(preds_labels)
+            print(preds_conf)
             symbol_windows_indexes = np.argwhere(preds_labels!='background')
 
             for ex, win_h_ind, win_w_ind in symbol_windows_indexes:
@@ -97,10 +117,10 @@ class SlidingWindow:
             rescale_w *= self.w_rescale_factor
 
         # filter out predictions for which we do not have at least 0.5 confidence
-        self.filter_out_unsure(threshold=0.5)
+        self.filter_out_unsure(threshold=0.3)
 
         # suppress some of the overlapping boxes
-        self.suppress()
+        self.suppress(iou_threshold=0.01)
 
         return self.symbols
 

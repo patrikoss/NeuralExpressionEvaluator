@@ -1,5 +1,5 @@
 from keras.models import Model
-from keras.layers import Conv2D, MaxPooling2D, Input
+from keras.layers import Conv2D, MaxPooling2D, Input, BatchNormalization, Reshape, Softmax
 from src.utils.others import CATEGORIES
 from src.dataset_generators.generate_gray_symbols_dataset import generate_gray_symbols_with_background
 from sklearn.preprocessing import LabelBinarizer
@@ -10,7 +10,8 @@ class SymbolDetector:
     # 8,8,16,16,32
     def __init__(self):
         img = Input(shape=(None, None, 3))
-        x = Conv2D(16, (3,3), activation='relu', padding='same')(img)
+        x = BatchNormalization()(img)
+        x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(2,2))(x)
         x = Conv2D(16, (3,3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(2,2))(x)
@@ -20,8 +21,9 @@ class SymbolDetector:
         x = MaxPooling2D(pool_size=(2, 2))(x)
         x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
         x = MaxPooling2D(pool_size=(2, 2))(x)
+        predictions = Conv2D(CATEGORIES + 1, (1, 1), activation='relu', padding='same')(x)
+        predictions = Softmax(axis=3)(predictions)
 
-        predictions = Conv2D(CATEGORIES+1, (1, 1), activation='softmax', padding='same')(x)
 
         self.label_binarizer = LabelBinarizer()
 
@@ -46,6 +48,7 @@ class SymbolDetector:
 
     def predict(self, images):
         preds_conf = self.model.predict(images)
+        #import ipdb; ipdb.set_trace()
         assert len(preds_conf.shape) == 4
         ex, h, w, cls = preds_conf.shape
         preds = preds_conf.reshape(ex*h*w, cls)

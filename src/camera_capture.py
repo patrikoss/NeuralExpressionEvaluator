@@ -13,7 +13,7 @@ cap.set(cv2.CAP_PROP_FPS, 1)
 
 def capture():
     sc1 = SymbolClassifier.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/symbol_classifier/s1.obj")
-    sw1 = SymbolDetector.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/sliding_window/sw1.obj")
+    sw1 = SymbolDetector.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/models/sliding_window/sw4.obj")
     fh = OpenCVFrameHandler(sc1)
     sw = SlidingWindowFrameHandler(sw1)
 

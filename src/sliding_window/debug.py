@@ -1,1 +1,0 @@
-from src.sliding_window.detector import SymbolDetector

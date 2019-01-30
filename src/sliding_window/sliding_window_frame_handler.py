@@ -14,7 +14,7 @@ class SlidingWindowFrameHandler(BaseFrameHandler):
         """
         Returns the list of symbol boxes found in a frame
         """
-        sw = SlidingWindow(frame, 2, 2, 0.5, 0.5, 3, 32, 32, self.detector)
+        sw = SlidingWindow(frame, 1, 1, 0.7, 0.7, 3, 32, 32, self.detector)
         return sw.slide()
 
     def show_frames(self, frame, symbols, expressions):

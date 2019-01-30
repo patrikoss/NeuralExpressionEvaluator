@@ -1,6 +1,5 @@
 import numpy as np
 from src.utils.dataset import load_dataset_by_symbol, load_dataset, shuffle_dataset, rescale_dataset
-from src.utils.others import show_images
 import cv2
 
 def preprocess_symbol(img, target_channel_size):
@@ -61,7 +60,7 @@ def generate_gray_symbols_with_background(symbols_folder, background_folder, bat
         batch_X = merge_symbols_and_backgrounds(batch_X, batch_bg)
 
         # add background
-        random_bg_ind = np.random.randint(0,bg_X.shape[0], batch_per_class*len(symbols))
+        random_bg_ind = np.random.randint(0,bg_X.shape[0], batch_per_class) # mb batch_per_class * len(symbols)
         bg_batch_x, bg_batch_y = bg_X[random_bg_ind], bg_y[random_bg_ind]
 
         batch_X, batch_y = np.concatenate([batch_X, bg_batch_x]), np.concatenate([batch_y, bg_batch_y])
@@ -79,7 +78,7 @@ def generate_gray_symbols_with_background(symbols_folder, background_folder, bat
 
 
 
-        yield shuffle_dataset(1./255 * batch_X, batch_y)
+        yield shuffle_dataset(batch_X, batch_y)
 
         batch_nr += 1
 
