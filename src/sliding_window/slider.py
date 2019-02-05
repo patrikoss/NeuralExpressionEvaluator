@@ -2,25 +2,47 @@ import itertools
 import cv2
 import numpy as np
 from src.utils.symbol import SymbolBox
-from heapq import heapify, heappop, heappush
+
 
 class SlidingWindow:
-    def __init__(self, image, h_starts, w_starts, h_rescale_factor, w_rescale_factor, max_rescales,
-                 h_window, w_window, detector):
+    def __init__(self, image, h_starts, w_starts, detector_window_h, detector_window_w, detector, windows):
         """
         :param image: input image
+        :param h_starts: number of starting positions for a window withing the window height.
+                        Example: if a window has a height of 30, and h_starts = 3 then
+                        the window is going to be offset in y-coordinate by
+                        0pixels, 10pixels and 20pixels
+        :param w_starts: number of starting positions for a window withing the window width.
+                        Example: if a window has a width of 30, and w_starts = 3 then
+                        the window is going to be offset in x-coordintate by
+                        0pixels, 10pixels and 20pixels
+        :param detector_window_h: the receptive field in width of the window. Should be
+                        derived based on the architecture.
+                        Example: MP(2,2) -> MP(2,2) -> MP(2,2), where MP - max-pooling
+                        The receptive field is (8,8) and so 8 should be passed as detector_window_h
+        :param detector_window_w: the receptive field in height of the window. Should be
+                        derived based on the architecture.
+                        Example: MP(2,2) -> MP(2,2) -> MP(2,2), where MP - max-pooling
+                        The receptive field is (8,8) and so 8 should be passed as detector_window_w
+        :param detector: instance of class SymbolDetector - should be already trained
+        :param windows: list of window shapes to apply to image in a format (height, width)
+                        Example: [(32,32), (64,32)]
+
         """
         self.image = image
 
         self.im_height, self.im_width = image.shape[0], image.shape[1]
 
-        h_step, w_step = h_window // h_starts, w_window // w_starts
-        self.offsets = list(itertools.product(range(0,h_window, h_step), range(0,w_window,w_step)))
+        h_step, w_step = detector_window_h // h_starts, detector_window_w // w_starts
+        self.offsets = list(itertools.product(range(0,detector_window_h, h_step), range(0,detector_window_w,w_step)))
 
-        self.h_window, self.w_window = h_window, w_window
+        self.h_window, self.w_window = detector_window_h, detector_window_w
 
-        self.h_rescale_factor, self.w_rescale_factor = h_rescale_factor, w_rescale_factor
-        self.max_rescales = max_rescales
+        # instead of changing the window size when sliding, we can resize the image so that a
+        # detectr_window_h, detector_window_w window corresponds to the appropriate window
+        # Enlarging the window corresponds to making the image smaller
+        self.image_rescales = [(detector_window_h/win_height, detector_window_w/win_width)
+                         for win_height, win_width in windows]
 
         self.symbols = list()
         self.detector = detector
@@ -35,8 +57,7 @@ class SlidingWindow:
 
     def suppress(self, iou_threshold=0.01):
         """
-        :param boxes:
-        :return:
+        Removes those predictions that the detector was unsure of
         """
         def iou(symbol1, symbol2):
             left = max(symbol1.left, symbol2.left)
@@ -59,14 +80,11 @@ class SlidingWindow:
                 valid.append(candidate)
         self.symbols = valid
 
-
     def find_symbol_boxes(self, rescale_h, rescale_w):
         """
-        :param h_rescale:
-        :param w_rescale:
-        :param h_offset:
-        :param w_offset:
-        :return: dict mapping boxes(start_h, start_w, box_h, box_w) to symbol classess along with the confidence
+        Returns list of candidates symbols found in a given image
+        :param rescale_h: height rescale factor of the image(necessary for variable shaped windows)
+        :param rescale_w: width rescale factor of the image(necessary for variable shaped windows)
         """
         target_h = int(self.im_height * rescale_h)
         target_w = int(self.im_width * rescale_w)
@@ -84,7 +102,6 @@ class SlidingWindow:
             offset_img = offset_img.reshape(1, *offset_img.shape)
 
             preds_labels, preds_conf = self.detector.predict(offset_img)
-            print(preds_conf)
             symbol_windows_indexes = np.argwhere(preds_labels!='background')
 
             for ex, win_h_ind, win_w_ind in symbol_windows_indexes:
@@ -97,26 +114,19 @@ class SlidingWindow:
                 left, right = int(left * 1.0/rescale_w), int(right * 1.0/rescale_w)
                 symbols.append(
                     SymbolBox(image=self.image, top=top, left=left, bottom=bottom,right=right,
-                              prediction_cls=preds_labels[ex,win_h_ind,win_w_ind],
+                              prediction_cls=str(preds_labels[ex,win_h_ind,win_w_ind]),
                               prediction_confidence=preds_conf[ex,win_h_ind,win_w_ind])
                 )
         return symbols
 
-
-
-
     def slide(self):
         """
-        :return: dict mapping boxes(start_h, start_w, box_h, box_w) to symbol classess along with the confidence
+        Returns symbols found in the image
         """
-        rescale_h, rescale_w = 1, 1
-
-        for rescale_nr in range(self.max_rescales):
+        for rescale_h, rescale_w in self.image_rescales:
             self.symbols += self.find_symbol_boxes(rescale_h, rescale_w)
-            rescale_h *= self.h_rescale_factor
-            rescale_w *= self.w_rescale_factor
 
-        # filter out predictions for which we do not have at least 0.5 confidence
+        # filter out predictions for which we do not have at least given confidence
         self.filter_out_unsure(threshold=0.3)
 
         # suppress some of the overlapping boxes

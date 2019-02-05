@@ -1,4 +1,10 @@
+from src.utils.expression_evaluator import evaluate as ev_exp
+
 class ExpressionBox:
+    """
+    Class representing the expression that has been found in the given image
+    """
+
     def __init__(self, image, max_row_dist=30, max_col_dist=100):
         """
         :param image: image on which the expression is found
@@ -17,6 +23,7 @@ class ExpressionBox:
         """
         Returns True iff the given symbol can be added to the current expression
         """
+        # TODO: implement better logic
         if not self.symbol_boxes:
             return True
         last_symbol = self.symbol_boxes[-1]
@@ -33,6 +40,19 @@ class ExpressionBox:
         self.right = max(self.right, symbol.right)
         self.bottom = max(self.bottom, symbol.bottom)
 
+    def evaluate(self):
+        expression = [str(symbol.prediction_cls) for symbol in self.symbol_boxes]
+        for i in range(len(expression)):
+            if expression[i].startswith('forwa'): # forward slash
+                expression[i] = '/'
+            elif expression[i].startswith('times'):
+                expression[i] = '*'
+
+        try:
+            result = str(ev_exp(expression))
+        except Exception:
+            result = "Invalid"
+        return result
 
 def get_expressions_boxes(symbols_boxes, image):
     """

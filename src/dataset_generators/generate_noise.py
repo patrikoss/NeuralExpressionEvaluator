@@ -5,6 +5,9 @@ from scipy.misc import imsave
 
 
 class NoiseGenerator:
+    """
+    Generate random noise in a black and white picture
+    """
     def __init__(self, im_height, im_width, prob):
         self.HEIGHT = im_height
         self.WIDTH = im_width

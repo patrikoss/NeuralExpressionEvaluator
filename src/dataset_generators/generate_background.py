@@ -6,8 +6,8 @@ from src.utils.dataset import save_dataset
 cap = cv2.VideoCapture(0)
 cap.set(cv2.CAP_PROP_FPS, 1)
 filename = "checked4b.npz"
-background_file_npz = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/background_color/" + filename
-full_paper_file_npz = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/full_paper_color/" + filename
+background_file_npz = "path/to/folder/with/background/patches/" + filename
+full_paper_file_npz = "/path/to/full/paper/screenshots/" + filename
 
 def choose_random_crops(image, display_img, crop_height=45, crop_width=45, crops=50):
     im_height, im_width = image.shape[0], image.shape[1]

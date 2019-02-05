@@ -10,9 +10,6 @@ DEV = 0.1
 
 
 def shuffle_dataset(X, y):
-    """
-    Shuffle dataset
-    """
     rand_perm = np.random.permutation(X.shape[0])
     return X[rand_perm], y[rand_perm]
 
@@ -25,8 +22,10 @@ def rescale_dataset(X, target_height, target_width):
     assert len(X.shape) == 4
     newX = []
     for i in range(X.shape[0]):
-        newX.append(cv2.resize(X[i], (target_height, target_width), interpolation=cv2.INTER_LINEAR))
+        newX.append(cv2.resize(X[i], (target_height, target_width),
+                               interpolation=cv2.INTER_LINEAR))
     return np.array(newX)
+
 
 def load_dataset_by_symbol(symbols_dataset_npz_folder, shuffle=True):
     """
@@ -48,6 +47,7 @@ def load_dataset_by_symbol(symbols_dataset_npz_folder, shuffle=True):
 
         symbols[symbol_name] = (symbol_X, symbol_y)
     return symbols
+
 
 def load_dataset(symbols_dataset_npz_folder, shuffle=True):
     """
@@ -89,7 +89,7 @@ def transform_images_to_npzfile(symbol_image_folder_path, npzfilepath, shuffle=T
         if counter % 100 == 0:
             print("Loaded {} images for symbol {}".format(counter, symbol))
 
-    y = np.empty(len(X), dtype='|S6')  # data type: string
+    y = np.empty(len(X), dtype='|S6')  # data type: string of length <= 6
     y[:] = symbol
     X = np.array(X)
     if shuffle:

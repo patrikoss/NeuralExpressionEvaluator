@@ -1,4 +1,3 @@
-import cv2
 from src.utils.base_frame_handler import BaseFrameHandler
 from src.sliding_window.slider import SlidingWindow
 
@@ -14,7 +13,7 @@ class SlidingWindowFrameHandler(BaseFrameHandler):
         """
         Returns the list of symbol boxes found in a frame
         """
-        sw = SlidingWindow(frame, 1, 1, 0.7, 0.7, 3, 32, 32, self.detector)
+        sw = SlidingWindow(frame, 2, 2, 32, 32, self.detector, [(32,32), (48,32)])
         return sw.slide()
 
     def show_frames(self, frame, symbols, expressions):

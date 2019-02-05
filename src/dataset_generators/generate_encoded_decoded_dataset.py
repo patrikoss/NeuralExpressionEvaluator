@@ -12,6 +12,13 @@ np.random.seed(SEED)
 
 
 def display_enc_dec_images(images, intermediate_height, intermediate_width):
+    """
+    Displays a list of images after the process of encoding and decoding
+    :param images: numpy array of images
+    :param intermediate_height: int
+    :param intermediate_width: int
+    :return: None
+    """
     columns, rows = 3, len(images)
     fig = plt.figure()
 
@@ -21,7 +28,7 @@ def display_enc_dec_images(images, intermediate_height, intermediate_width):
     for row in range(rows):
         raw_img = images[row]
 
-        encoded = encode_symbol(raw_img, intermediate_height, intermediate_width)
+        encoded = encode_symbol(raw_img, intermediate_height, intermediate_width, erode=True)
         decoded = decode_symbol(encoded, INPUT_HEIGHT, INPUT_WIDTH)
 
         ax.append(fig.add_subplot(rows, columns, columns*row+1))
@@ -36,13 +43,18 @@ def display_enc_dec_images(images, intermediate_height, intermediate_width):
     plt.colorbar()
     plt.show()
 
-# Example usage:
-# dataset = np.load("/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/0.npz")
-# X = dataset['X']
-# display_enc_dec_images( [X[0], X[1], X[2], X[3], X[4]], 20, 20 )
 
 def generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
                                      intermediate_shape):
+    """
+    Transforms the symbols specified in the source folder into
+    more appropriate shape and saves in the target folder
+    :param source_folder_path: path to folder with input .npz symbols
+    :param target_folder_path: path to folder with output folder
+    :param intermediate_shape: intermediate shape (height, width) of the symbol
+                                image
+    :return: None
+    """
 
     for filename in os.listdir(source_folder_path):
 
@@ -61,7 +73,7 @@ def generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
 
             # append differently transformed images
             for intermediate_height, intermediate_width in intermediate_shape:
-                encoded = sl.encode_symbol(symbol, intermediate_height, intermediate_width)
+                encoded = sl.encode_symbol(symbol, intermediate_height, intermediate_width, erode=True)
                 decoded = sl.decode_symbol(encoded, INPUT_HEIGHT, INPUT_WIDTH)
                 newX.append(decoded); newY.append(symbol_name)
 
@@ -76,12 +88,6 @@ def generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
 
 def generate(source_folder_path, target_folder_path):
     generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
-                                     intermediate_shape=[(40, 20), (30, 20), (20, 20),
-                                                         (70, 70), (70, 40), (70, 30), (70, 20)])
+                                     intermediate_shape=[(70,70), (20,20), (30,20), (40,20), (70,40)])
 
 
-# Example usage:
-#source_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/npz_symbols/"
-#target_folder_path = "/home/patryk/PycharmProjects/MathExpressionEvaluator/dataset/all/raw_symbols/encoded_decoded_npz_symbols"
-#generate_encoded_decoded_dataset(source_folder_path, target_folder_path,
-#                                 intermediate_shape=[(70,70), (20,20), (30,20), (40,20), (70,40)])

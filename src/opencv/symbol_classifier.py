@@ -9,7 +9,9 @@ import pickle
 
 
 class SymbolClassifier:
-
+    """
+    Simple classifier for black-and-white symbols candidates
+    """
     def __init__(self):
         model = Sequential()
         model.add(BatchNormalization(input_shape=(INPUT_HEIGHT, INPUT_WIDTH, 1)))
@@ -34,7 +36,7 @@ class SymbolClassifier:
         trainX = trainX.reshape(*trainX.shape, -1)
 
         self.encoder.fit(trainY)
-        self.model.fit(trainX, self.encoder.transform(trainY), epochs=2,
+        self.model.fit(trainX, self.encoder.transform(trainY), epochs=1,
                        batch_size=128,validation_split=0.01)
 
     def evaluate(self, symbols_dev_npz_folder):
@@ -70,7 +72,7 @@ class SymbolClassifier:
         """
         probabilities = self.predict_probabilties(np_images)
         if not len(probabilities):
-            return np.empty(0, 'S6')
+            return np.empty(0, 'S6'), np.empty(0)
         predictions = np.argmax(probabilities, axis=1)
         return self.encoder.categories_[0][predictions], probabilities.max(axis=1)
 
@@ -79,12 +81,3 @@ class SymbolClassifier:
         with open(model_filepath, 'rb') as filemodel:
             symbol_classifier = pickle.load(filemodel)
         return symbol_classifier
-
-
-
-
-"""
-# How to train?
-sc = SymbolClassifier1("path/to/encoded_decoded_dataset")
-sc.save("...")
-"""

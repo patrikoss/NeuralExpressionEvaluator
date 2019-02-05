@@ -26,6 +26,22 @@ def infix_to_postfix(symbols):
     if len(symbols) > 0 and symbols[0] == '-' or symbols[0] == '+':
         symbols = ['0'] + symbols
 
+    concat = ''
+    concat_symbols = []
+    for i in range(len(symbols)):
+        symbol = symbols[i]
+        if '0' <= symbol <= '9':
+            concat = concat + symbol
+        else:
+            if len(concat) > 0:
+                concat_symbols.append(concat)
+                concat = ''
+            concat_symbols.append(symbol)
+
+    if len(concat) > 0:
+        concat_symbols.append(concat)
+    symbols = concat_symbols
+
     stack = []
     postfix = []
     for symbol in symbols:

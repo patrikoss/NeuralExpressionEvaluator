@@ -3,7 +3,8 @@ import cv2
 
 class BaseFrameHandler:
     """
-    Base class for FrameHandler
+    Class for handling a camera frame. Sublclasses should override get_symbols
+    method.
     """
     def __init__(self):
         pass
@@ -25,5 +26,8 @@ class BaseFrameHandler:
                         fontScale=1, color=(0, 255, 0), thickness=2)
 
         for exp_box in expressions:
-            cv2.rectangle(frame, (exp_box.left, exp_box.top), (exp_box.right, exp_box.bottom), (255, 0, 0), 1)
+            cv2.rectangle(frame, (exp_box.left, exp_box.top), (exp_box.right, exp_box.bottom), (255, 0, 0), 2)
+            cv2.putText(frame, exp_box.evaluate(), org=(exp_box.left, exp_box.top),
+                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+                        fontScale=1, color=(255, 0, 0), thickness=1)
         cv2.imshow('detected symbols and expressions', frame)
